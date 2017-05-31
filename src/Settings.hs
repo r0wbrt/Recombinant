@@ -15,7 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 -}
-
+-- TODO Help Message
+-- TODO About Message
 
 module Settings
     ( Settings (..)
@@ -31,7 +32,7 @@ import           Control.Monad.Except   (ExceptT, catchError, runExceptT,
                                          throwError)
 import           Control.Monad.Identity
 import           Data.Char              (toUpper)
-import           System.Console.GetOpt  (ArgDescr (ReqArg),
+import           System.Console.GetOpt  (ArgDescr (NoArg, ReqArg),
                                          ArgOrder (ReturnInOrder),
                                          OptDescr (..), getOpt)
 import           Text.Parsec            (parse, sepBy)
@@ -81,7 +82,7 @@ recordValidators = []
 -- | Command line parsers which will convert the string list into its associated
 --   record form.
 parserList :: [OptDescr (Settings -> SettingMonad Settings)]
-parserList = []
+parserList = [optionMode, optionNumberOfChannels, optionBlockSize, optionPathPattern, optionCombinedPath, optionInterleavePattern, optionHelp, optionAbout]
 
 
 -- | Converts command line input into a settings record.
@@ -133,7 +134,9 @@ optionNumberOfChannels = Option shortOptionsNames longOptionNames (ReqArg handle
           longOptionNames = ["channels"]
           shortOptionsNames = ['c']
           argExp = "#"
-          handler input record = return $ record {numberOfChannels = read input::Int }
+          handler input record = do
+              n <- parseIntoInt "--channels (-c)" input
+              return $ record {numberOfChannels = n }
 
 
 -- | Option parser for command line option --blockSize
@@ -143,7 +146,9 @@ optionBlockSize = Option shortOptionsNames longOptionNames (ReqArg handler argEx
           longOptionNames = ["blockSize"]
           shortOptionsNames = ['b']
           argExp = "#"
-          handler input record = return $ record {blockSize = read input::Int }
+          handler input record = do
+              n <- parseIntoInt "--blockSize (-b)" input
+              return $ record {blockSize = n }
 
 
 -- | Option parser for command line option --pathPattern
@@ -192,15 +197,42 @@ optionInterleavePattern = Option shortOptionsNames longOptionNames (ReqArg handl
           shortOptionsNames = ['i']
           argExp = "1,2,3,2,2,1"
           handler input record = do
-              list <- parseInterleavePattern input
+              list <- parseInterleavePattern "--interleavePattern (-i)" input
               return $ record { interleavePattern = list }
 
 
--- | Parses the interleave pattern into its final form
-parseInterleavePattern :: String -> SettingMonad [Int]
-parseInterleavePattern input = case parse (commaSep lexer (integer lexer)) "" input of
+-- | Parses the interleave patten which is specified as a string of integers
+--   seperated by a comma into a list of integers. eg "1,2,3,4" into [1,2,3,4]
+parseInterleavePattern :: String -> String -> SettingMonad [Int]
+parseInterleavePattern option input = case parse (commaSep lexer (integer lexer)) option input of
                                         Left err -> throwError $ ErrorMessages [(show err)]
                                         Right list -> return (map fromIntegral list)
     where lexer = makeTokenParser emptyDef
 
 
+-- | Handles the help input option.
+optionHelp :: OptDescr (Settings -> SettingMonad Settings)
+optionHelp = Option shortOptionsNames longOptionNames (NoArg handler) description
+    where description = "Show this help message"
+          longOptionNames = ["help", "Help"]
+          shortOptionsNames = ['h']
+          handler :: Settings -> SettingMonad Settings -- Declare type explicitly since it can't be inferred.
+          handler _ = throwError ShowHelp
+
+
+-- | Handles the about input option.
+optionAbout :: OptDescr (Settings -> SettingMonad Settings)
+optionAbout = Option shortOptionsNames longOptionNames (NoArg handler) description
+    where description = "Show this about message"
+          longOptionNames = ["about"]
+          shortOptionsNames = ['a']
+          handler :: Settings -> SettingMonad Settings -- Declare type explicitly since it can't be inferred.
+          handler _ = throwError ShowAbout
+
+
+-- | Parse a string into an Int using parsec
+parseIntoInt :: String -> String -> SettingMonad Int
+parseIntoInt option input = case parse (integer lexer) option input of
+                                Left err -> throwError $ ErrorMessages [show err]
+                                Right result -> return $ fromIntegral result
+    where lexer = makeTokenParser emptyDef

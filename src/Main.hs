@@ -18,7 +18,35 @@ limitations under the License.
 
 module Main where
 
-import           Settings
+import           Data.Text          (pack, strip, unpack)
+import qualified Messages           as Messages
+import           Settings           (InputError (..), parseInput)
+import           System.Environment (getArgs, getProgName)
+import           System.Exit        (exitFailure, exitSuccess)
 
 main :: IO ()
-main = return ()
+main = do
+    input <- getArgs
+    let parseResults = parseInput input
+    case parseResults of
+         Right settings            -> exitSuccess
+         Left (InvalidOptions msg) -> writeErrorMessage msg >> exitFailure
+         Left (ErrorMessages msg)  -> writeErrorMessage msg >> exitFailure
+         Left ShowHelp             -> do
+             progName <- getProgName
+             putStr (unlines $ Messages.extendedHelpMessage progName) >> exitSuccess
+         Left ShowAbout            -> exitSuccess
+
+    exitSuccess
+
+
+-- | Writes a error caused by invalid command line input to the console
+writeErrorMessage :: [String] -> IO ()
+writeErrorMessage msg = putStr adjMsg
+    where header = "Command Input Error:"
+          adjMsg = unlines $ ["", header, ""] ++ (map (\s -> "\t" ++ s) $ concatMap convertIntoLines msg) ++ [""]
+
+
+convertIntoLines :: String -> [String]
+convertIntoLines "" = [""]
+convertIntoLines line = filter (\l -> (unpack $ strip $ pack l) /= "") $ lines line
