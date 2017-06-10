@@ -18,11 +18,12 @@ limitations under the License.
 
 module Main where
 
-import           Data.Text          (pack, strip, unpack)
-import qualified Messages           as Messages
-import           Settings           (InputError (..), parseInput)
-import           System.Environment (getArgs, getProgName)
-import           System.Exit        (exitFailure, exitSuccess)
+import           Data.Text             (pack, strip, unpack)
+import qualified Messages              as Messages
+import           Settings              (InputError (..), parseInput, parserList)
+import           System.Console.GetOpt (usageInfo)
+import           System.Environment    (getArgs, getProgName)
+import           System.Exit           (exitFailure, exitSuccess)
 
 main :: IO ()
 main = do
@@ -32,10 +33,12 @@ main = do
          Right settings            -> exitSuccess
          Left (InvalidOptions msg) -> writeErrorMessage msg >> exitFailure
          Left (ErrorMessages msg)  -> writeErrorMessage msg >> exitFailure
-         Left ShowHelp             -> do
+         Left ShowAbout             -> do
              progName <- getProgName
              putStr (unlines $ Messages.extendedHelpMessage progName) >> exitSuccess
-         Left ShowAbout            -> exitSuccess
+         Left ShowHelp           -> do
+             progName <- getProgName
+             putStr (Messages.shortHelpMessage progName parserList) >> exitSuccess
 
     exitSuccess
 

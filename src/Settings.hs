@@ -15,16 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 -}
--- TODO Help Message
--- TODO About Message
 
 module Settings
     ( Settings (..)
     , InputError (..)
     , parseInput
     , getPathList
-  --  , helpMessage
-  --  , aboutMessage
+    , parserList
     ) where
 
 
@@ -214,7 +211,7 @@ parseInterleavePattern option input = case parse (commaSep lexer (integer lexer)
 optionHelp :: OptDescr (Settings -> SettingMonad Settings)
 optionHelp = Option shortOptionsNames longOptionNames (NoArg handler) description
     where description = "Show this help message"
-          longOptionNames = ["help", "Help"]
+          longOptionNames = []
           shortOptionsNames = ['h']
           handler :: Settings -> SettingMonad Settings -- Declare type explicitly since it can't be inferred.
           handler _ = throwError ShowHelp
@@ -223,9 +220,9 @@ optionHelp = Option shortOptionsNames longOptionNames (NoArg handler) descriptio
 -- | Handles the about input option.
 optionAbout :: OptDescr (Settings -> SettingMonad Settings)
 optionAbout = Option shortOptionsNames longOptionNames (NoArg handler) description
-    where description = "Show this about message"
-          longOptionNames = ["about"]
-          shortOptionsNames = ['a']
+    where description = "Shows a longer help message"
+          longOptionNames = ["help"]
+          shortOptionsNames = []
           handler :: Settings -> SettingMonad Settings -- Declare type explicitly since it can't be inferred.
           handler _ = throwError ShowAbout
 

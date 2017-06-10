@@ -16,7 +16,11 @@ limitations under the License.
 
 -}
 
-module Messages (extendedHelpMessage) where
+module Messages (extendedHelpMessage, shortHelpMessage) where
+import           System.Console.GetOpt (OptDescr (..), usageInfo)
+
+shortHelpMessage :: String -> [OptDescr a] -> String
+shortHelpMessage progName options = usageInfo ("Usage: "++progName++" [OPTIONS...]") options
 
 extendedHelpMessage :: String -> [String]
 extendedHelpMessage progName = concat $
@@ -47,7 +51,11 @@ extendedHelpMessage progName = concat $
             , "The following settings may be omitted. The default value of each option is"
             , "described in its description."
             , sEmptyLine
-            ] -- ++ optionInterleavePattern ++ optionBlockSize ++ optionCustomPaths
+            ] ++ optionBlockSize ++ optionInterleavePattern ++
+            [ sEmptyLine
+            , "The following options will provide detail about the program."
+            , sEmptyLine
+            ] ++ optionHelp
         )
     , sSection "Author" ["Written by Robert Christian Taylor"]
     , sSection "Reporting Bugs" [sToSingleLine ["Report bugs to ", sUnderline "https://github.com/r0wbrt/Recombinant/issues"]]
@@ -77,7 +85,7 @@ optionMode =
         , sToSingleLine ["The streams are interleaved in blocks of size ", sBold "-b", "."]
         , sEmptyLine
         , "In demultiplex mode, the opposite occurs. The stream"
-        , sToSingleLine ["is broken down into", sBold "-n", " streams. The"]
+        , sToSingleLine ["is broken down into", sBold " -n", " streams. The"]
         , sToSingleLine ["streams are deinterleaved in blocks of size ", sBold "-b", "."]
         ]
 
@@ -106,9 +114,46 @@ optionPathPattern =
         , "directed to the following paths:"
         , (sIndent $ sUnderline "/myPath0")
         , (sIndent $ sUnderline "/myPath1")
+        , sEmptyLine
+        , "Altenatively, the file paths can be specified manually by"
+        , "specifying them after the program arguments."
         ]
 
+optionBlockSize :: [String]
+optionBlockSize =
+    sOption "-b --blockSize" "[SIZE IN BYTES]"
+        [ sToSingleLine ["Sets the size of the block to read from each stream."]
+        , sEmptyLine
+        , sToSingleLine ["In ", sBold "-m", "=", sUnderline "multiplex", ", the program will read"]
+        , sToSingleLine ["in blocks of size ", sBold "-b", " from each stream and combine them"]
+        , sToSingleLine ["into a single multiplexed stream following pattern", sBold "-i", "."]
+        , sEmptyLine
+        , sToSingleLine ["In ", sBold "-m", "=", sUnderline "demultiplex", " the program will read"]
+        , sToSingleLine ["blocks of size ", sBold "-b", " from ", sBold "-o", " and write them to"]
+        , sToSingleLine ["the output streams."]
+        ]
 
+optionInterleavePattern :: [String]
+optionInterleavePattern =
+    sOption "-i --interleavePattern" "[PATTERN]"
+        [ "Sets the pattern for interleaving the streams."
+        , "The format of the pattern is a comma seperated list of numbers"
+        , "where each number represents an individual stream."
+        , sToSingleLine ["The stream count begins at 1 and continues to ", sBold "-n"]
+        , sEmptyLine
+        , sToSingleLine ["Example: To interleave 5 channels (", sBold "-n", "=", sUnderline "5", ") in the order"]
+        , sToSingleLine ["one, three, five, two, four, the value passed to ", sBold "-n", " would be "]
+        , sUnderline "1,3,5,2,4."
+        ]
+
+optionHelp :: [String]
+optionHelp =
+    sOption "-h --help" ""
+        [ sToSingleLine ["Provides a help message about this program. Passing in", sBold "-h"]
+        , "will produce a consise list of options."
+        , sEmptyLine
+        , sToSingleLine ["Passing in ", sBold "--help", " will produce this message"]
+        ]
 
 sUnderline :: String -> String
 sUnderline text = "\ESC[4m" ++ text ++ "\ESC[0m"
