@@ -20,10 +20,10 @@ module Messages (extendedHelpMessage, shortHelpMessage) where
 import           System.Console.GetOpt (OptDescr (..), usageInfo)
 
 shortHelpMessage :: String -> [OptDescr a] -> String
-shortHelpMessage progName options = usageInfo ("Usage: "++progName++" [OPTIONS...]") options
+shortHelpMessage progName = usageInfo ("Usage: "++progName++" [OPTIONS...]")
 
 extendedHelpMessage :: String -> [String]
-extendedHelpMessage progName = concat $
+extendedHelpMessage progName = concat
     [ sSection "Name" [progName ++ " - multiplexes and demultiplexes multiple streams"]
     , sSection "Synopsis"
         [ sToSingleLine [ progName
@@ -112,8 +112,8 @@ optionPathPattern =
         , "appended to the end representing that stream. So for example, if the path is"
         , sToSingleLine [sUnderline "/myPath", ", and there are 2 streams, then the 2 streams will get"]
         , "directed to the following paths:"
-        , (sIndent $ sUnderline "/myPath0")
-        , (sIndent $ sUnderline "/myPath1")
+        , sIndent $ sUnderline "/myPath0"
+        , sIndent $ sUnderline "/myPath1"
         , sEmptyLine
         , "Altenatively, the file paths can be specified manually by"
         , "specifying them after the program arguments."
@@ -159,11 +159,11 @@ sUnderline :: String -> String
 sUnderline text = "\ESC[4m" ++ text ++ "\ESC[0m"
 
 sSection :: String -> [String] -> [String]
-sSection title body =[sBold title] ++ (map sIndent body) ++ [sEmptyLine]
+sSection title body =[sBold title] ++ map sIndent body ++ [sEmptyLine]
 
 sOption :: String -> String -> [String] -> [String]
 sOption name arg description = header ++ body ++ footer
-    where header = [ sToSingleLine [sBold name] ++ (if arg /= "" then ("=" ++ sUnderline arg) else "")]
+    where header = [ sToSingleLine [sBold name] ++ (if arg /= "" then "=" ++ sUnderline arg else "")]
           body = map sIndent description
           footer = [sEmptyLine]
 
@@ -174,7 +174,7 @@ sIndent :: String -> String
 sIndent text = "\t" ++ text
 
 sToSingleLine :: [String] -> String
-sToSingleLine line = concat line
+sToSingleLine = concat
 
 sEmptyLine :: String
 sEmptyLine = ""

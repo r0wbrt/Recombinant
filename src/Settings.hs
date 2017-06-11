@@ -29,17 +29,15 @@ module Settings
     ) where
 
 
-import           Control.Monad.Except   (ExceptT, catchError, runExceptT,
-                                         throwError)
+import           Control.Monad.Except   (ExceptT, runExceptT, throwError)
 import           Control.Monad.Identity
 import           Data.Char              (toUpper)
 import           System.Console.GetOpt  (ArgDescr (NoArg, ReqArg),
                                          ArgOrder (ReturnInOrder),
                                          OptDescr (..), getOpt)
-import           Text.Parsec            (parse, sepBy)
+import           Text.Parsec            (parse)
 import           Text.Parsec.Language   (emptyDef)
-import           Text.Parsec.Token      (comma, commaSep, integer,
-                                         makeTokenParser)
+import           Text.Parsec.Token      (commaSep, integer, makeTokenParser)
 
 -- | The setting record to store parsed options in
 data Settings = Settings
@@ -91,8 +89,7 @@ parseInput :: [String] -> Either InputError Settings
 parseInput input = runIdentity $ runExceptT mainExecution
     where mainExecution = do
             inputParsers <- convertInputIntoBuilders parserList input
-            builtRecord <- buildRecord (inputParsers ++ recordValidators)
-            return builtRecord
+            buildRecord (inputParsers ++ recordValidators)
 
 
 -- | Converts a input list into a list of builders which will be used to create
@@ -106,7 +103,7 @@ convertInputIntoBuilders parsers input =
 
 
 -- | Builds a record using a list of builders.
-buildRecord :: [(Settings -> SettingMonad Settings)] -> SettingMonad Settings
+buildRecord :: [Settings -> SettingMonad Settings] -> SettingMonad Settings
 buildRecord = foldl (>>=) (return startingSettings)
 
 
@@ -117,17 +114,17 @@ getPathList settings = if customPaths settings /= [] then customPaths settings e
 
 -- | Returns the appropriate interleave pattern
 getInterleavePattern :: Settings -> [Int]
-getInterleavePattern settings = if interleavePattern settings == [] then [0 .. (numberOfChannels settings - 1)] else interleavePattern settings
+getInterleavePattern settings = if null (interleavePattern settings) then [0 .. (numberOfChannels settings - 1)] else interleavePattern settings
 
 -- | Generates the path list from the number of channels and the supplied
 --   pattern
 generatePaths :: Int -> String -> [String]
-generatePaths numberOfChannels pattern = zipWith (\a b -> a ++ (show b)) (replicate numberOfChannels pattern) [1 .. numberOfChannels]
+generatePaths nOfChannels hPattern = zipWith (\a b -> a ++ show b) (replicate nOfChannels hPattern) [1 .. nOfChannels]
 
 
 -- | Wraps non options into a builder, used to later build a record
 customPathWrapper :: String -> Settings -> SettingMonad Settings
-customPathWrapper path settings = return $ settings { customPaths = (customPaths settings) ++ [path] }
+customPathWrapper path settings = return $ settings { customPaths = customPaths settings ++ [path] }
 
 -- | Specifier for the mode of operation for Recombinant
 data ModeOfOperation = Multiplex | Demultiplex | NotSpecified | ModeInvalid
@@ -210,7 +207,7 @@ optionInterleavePattern = Option shortOptionsNames longOptionNames (ReqArg handl
 --   seperated by a comma into a list of integers. eg "1,2,3,4" into [1,2,3,4]
 parseInterleavePattern :: String -> String -> SettingMonad [Int]
 parseInterleavePattern option input = case parse (commaSep lexer (integer lexer)) option input of
-                                        Left err -> throwError $ ErrorMessages [(show err)]
+                                        Left err -> throwError $ ErrorMessages [show err]
                                         Right list -> return (map fromIntegral list)
     where lexer = makeTokenParser emptyDef
 

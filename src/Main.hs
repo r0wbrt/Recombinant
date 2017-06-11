@@ -16,22 +16,21 @@ limitations under the License.
 
 -}
 
-module Main where
+module Main (module Main) where
 
-import           Control.Monad         (when)
-import qualified Data.ByteString.Lazy  as BS
-import           Data.Text             (pack, strip, unpack)
-import qualified Data.Vector           as V
-import qualified Messages              as Messages
-import           Settings              (InputError (..), ModeOfOperation (..),
-                                        Settings (blockSize, combinedPath, mode),
-                                        getInterleavePattern, getPathList,
-                                        parseInput, parserList)
-import           System.Console.GetOpt (usageInfo)
-import           System.Environment    (getArgs, getProgName)
-import           System.Exit           (exitFailure, exitSuccess)
-import           System.IO             (Handle, hIsEOF, hSetBinaryMode, IOMode (ReadMode, WriteMode), hClose)
-import GHC.IO.Handle.FD (openFileBlocking)
+import qualified Data.ByteString.Lazy as BS
+import           Data.Text            (pack, strip, unpack)
+import qualified Data.Vector          as V
+import           GHC.IO.Handle.FD     (openFileBlocking)
+import           Messages
+import           Settings             (InputError (..), ModeOfOperation (..),
+                                       Settings (blockSize, combinedPath, mode),
+                                       getInterleavePattern, getPathList,
+                                       parseInput, parserList)
+import           System.Environment   (getArgs, getProgName)
+import           System.Exit          (exitFailure, exitSuccess)
+import           System.IO            (Handle, IOMode (ReadMode, WriteMode),
+                                       hClose, hIsEOF, hSetBinaryMode)
 
 
 -- | Main functional entry point
@@ -53,16 +52,18 @@ main = do
     exitSuccess
 
 
-safeOpenRead :: String -> IO (Handle)
+-- | Opens a file for reading
+safeOpenRead :: String -> IO Handle
 safeOpenRead path = do
-    h <- openFileBlocking path ReadMode 
+    h <- openFileBlocking path ReadMode -- Needed to open named pipes
     hSetBinaryMode h True
     return h
 
 
-safeOpenWrite :: String -> IO (Handle)
+-- | Opens a file for writing
+safeOpenWrite :: String -> IO Handle
 safeOpenWrite path = do
-    h <- openFileBlocking path WriteMode 
+    h <- openFileBlocking path WriteMode -- Needed to open named pipes
     hSetBinaryMode h True
     return h
 
@@ -72,22 +73,24 @@ runProgram :: Settings -> IO ()
 runProgram settings = do
 
     -- Open secondary streams
-    let openFunction = case (mode settings) of
+    let openFunction = case mode settings of
                         Multiplex   -> safeOpenRead
                         Demultiplex -> safeOpenWrite
+                        _           -> error "Invalid Mode"
 
-    handlers <- mapM (\path -> openFunction path) (getPathList settings)
+    handlers <- mapM openFunction (getPathList settings)
 
     -- Open main combined stream
-    stream <- case (mode settings) of
+    stream <- case mode settings of
                    Multiplex   -> safeOpenWrite (combinedPath settings)
                    Demultiplex -> safeOpenRead (combinedPath settings)
+                   _           -> error "Invalid Mode"
 
     --Set up the handles in their proper order and cycle them forever.
     let handleList = cycle $ interleaveHandles (getInterleavePattern settings) handlers
 
     --Branch based on mode of execution
-    case (mode settings) of
+    case mode settings of
 
          Multiplex -> multiplexStreams (blockSize settings) handleList stream
          Demultiplex -> demultiplexStreams (blockSize settings) handleList stream
@@ -97,32 +100,34 @@ runProgram settings = do
          _ -> error "Invalid Mode"
 
     hClose stream
-    mapM_ (\h -> hClose h) handlers
+    mapM_ hClose handlers
 
 -- | Branch of program executed when mode is set to multiplex
 multiplexStreams :: Int -> [Handle] -> Handle -> IO ()
-multiplexStreams blockSize (h:hs) multiplexedStreamH = do
+multiplexStreams _ [] _ = return ()
+multiplexStreams blockSz (h:hs) multiplexedStreamH = do
 
-        getblockReturn <- getBlock blockSize h
+        getblockReturn <- getBlock blockSz h
         case getblockReturn of
                             Just block -> handleBlock block
                             Nothing    -> return ()
 
     where handleBlock block = do
               writeBlock multiplexedStreamH block
-              multiplexStreams blockSize hs multiplexedStreamH
+              multiplexStreams blockSz hs multiplexedStreamH
 
 
 -- | Branch of program to execute when mode is set to demultiplex
 demultiplexStreams :: Int -> [Handle] -> Handle -> IO ()
-demultiplexStreams blockSize (h:hs) multiplexedStreamH = do
-        getblockReturn <- getBlock blockSize multiplexedStreamH
+demultiplexStreams _ [] _ = return ()
+demultiplexStreams blockSz (h:hs) multiplexedStreamH = do
+        getblockReturn <- getBlock blockSz multiplexedStreamH
         case getblockReturn of
                                   Just block -> handleBlock block
                                   Nothing    -> return ()
     where handleBlock block = do
             writeBlock h block
-            demultiplexStreams blockSize hs multiplexedStreamH
+            demultiplexStreams blockSz hs multiplexedStreamH
 
 
 -- | Gets a block from a stream.
@@ -136,23 +141,23 @@ getBlock size handle = do
 
 -- | Generates a new list based on the supplied pattern
 interleaveHandles :: [Int] -> [a] -> [a]
-interleaveHandles pattern handles = map (\pos -> handleVector V.! pos) pattern
+interleaveHandles hPattern handles = map (\pos -> handleVector V.! pos) hPattern
     where handleVector = V.fromList handles
 
 
 -- | Writes a block of data to the output.
 writeBlock :: Handle -> BS.ByteString -> IO ()
-writeBlock h block = BS.hPut h block
+writeBlock = BS.hPut
 
 
 -- | Writes a error caused by invalid command line input to the console
 writeErrorMessage :: [String] -> IO ()
 writeErrorMessage msg = putStr adjMsg
     where header = "Command Input Error:"
-          adjMsg = unlines $ ["", header, ""] ++ (map (\s -> "\t" ++ s) $ concatMap convertIntoLines msg) ++ [""]
+          adjMsg = unlines $ ["", header, ""] ++ map (\s -> "\t" ++ s)  (concatMap convertIntoLines msg) ++ [""]
 
 
 -- | Converts a string into a list of lines
 convertIntoLines :: String -> [String]
 convertIntoLines "" = [""]
-convertIntoLines line = filter (\l -> (unpack $ strip $ pack l) /= "") $ lines line
+convertIntoLines line = filter (\l -> unpack  (strip $ pack l) /= "") $ lines line
