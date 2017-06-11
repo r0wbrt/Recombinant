@@ -16,12 +16,16 @@ limitations under the License.
 
 -}
 
+--TODO - Validators
+
 module Settings
     ( Settings (..)
     , InputError (..)
     , parseInput
     , getPathList
     , parserList
+    , ModeOfOperation (..)
+    , getInterleavePattern
     ) where
 
 
@@ -110,6 +114,10 @@ buildRecord = foldl (>>=) (return startingSettings)
 getPathList :: Settings -> [String]
 getPathList settings = if customPaths settings /= [] then customPaths settings else generatePaths (numberOfChannels settings) (pathPattern settings)
 
+
+-- | Returns the appropriate interleave pattern
+getInterleavePattern :: Settings -> [Int]
+getInterleavePattern settings = if interleavePattern settings == [] then [0 .. (numberOfChannels settings - 1)] else interleavePattern settings
 
 -- | Generates the path list from the number of channels and the supplied
 --   pattern

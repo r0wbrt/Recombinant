@@ -149,8 +149,8 @@ optionInterleavePattern =
 optionHelp :: [String]
 optionHelp =
     sOption "-h --help" ""
-        [ sToSingleLine ["Provides a help message about this program. Passing in", sBold "-h"]
-        , "will produce a consise list of options."
+        [ sToSingleLine ["Provides a help message about this program. Passing in ", sBold "-h"]
+        , "will produce a concise list of options."
         , sEmptyLine
         , sToSingleLine ["Passing in ", sBold "--help", " will produce this message"]
         ]
