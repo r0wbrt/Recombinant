@@ -141,7 +141,7 @@ getBlock size handle = do
 
 -- | Generates a new list based on the supplied pattern
 interleaveHandles :: [Int] -> [a] -> [a]
-interleaveHandles hPattern handles = map (\pos -> handleVector V.! pos) hPattern
+interleaveHandles hPattern handles = map (\pos -> handleVector V.! (pos - 1) ) hPattern
     where handleVector = V.fromList handles
 
 

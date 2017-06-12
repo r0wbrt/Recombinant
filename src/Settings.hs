@@ -59,6 +59,9 @@ data InputError = InvalidOptions [String] | ErrorMessages [String] | ShowHelp | 
 type SettingMonad = ExceptT InputError Identity
 
 
+-- | Specifier for the mode of operation for Recombinant
+data ModeOfOperation = Multiplex | Demultiplex | NotSpecified | ModeInvalid
+
 -- | Starting point to build the setting record
 startingSettings :: Settings
 startingSettings = Settings
@@ -75,8 +78,45 @@ startingSettings = Settings
 -- | List of functions to run after the record is intially built from the
 --   supplied user input.
 recordValidators :: [Settings -> SettingMonad Settings]
-recordValidators = []
+recordValidators = [validatorNumberOfChannels, validatorMode, validatorPaths, validatorBlockSize, validatorInterleavePattern, validatorCombinedPath]
 
+
+validatorNumberOfChannels :: Settings -> SettingMonad Settings
+validatorMode :: Settings -> SettingMonad Settings
+validatorPaths :: Settings -> SettingMonad Settings
+validatorBlockSize :: Settings -> SettingMonad Settings
+validatorInterleavePattern :: Settings -> SettingMonad Settings
+validatorCombinedPath :: Settings -> SettingMonad Settings
+
+
+validatorNumberOfChannels settings =
+    if numberOfChannels settings < 1 then throwError (ErrorMessages
+        [ "The number of specified channels, -c, must be greater then zero."
+        , "The supplied value " ++ show (numberOfChannels settings) ++ " does not satisfy that requirment."
+        ])
+                                                            else return settings
+
+validatorMode settings = case mode settings of
+                                    Multiplex -> return settings
+                                    Demultiplex -> return settings
+                                    NotSpecified -> throwError (ErrorMessages ["The mode of operation -m (--mode) must be specified."])
+                                    ModeInvalid -> throwError (ErrorMessages["The supplied mode of operation was invalid."])
+
+
+validatorPaths settings = if length (getPathList settings) /= numberOfChannels settings then
+                            throwError (ErrorMessages ["The number of supplied paths does not match the number of channels -c."])
+                                                                                          else return settings
+
+
+validatorBlockSize settings = if blockSize settings < 1 then throwError $ ErrorMessages ["Option block size -b must have a value greater then zero."]
+                                                        else return settings
+
+
+validatorInterleavePattern settings = do
+    mapM_ (\pos -> when (pos - 1 > numberOfChannels settings) (throwError (ErrorMessages ["Interleave position option out of range."]))) (getInterleavePattern settings)
+    return settings
+
+validatorCombinedPath settings = if null (combinedPath settings) then throwError (ErrorMessages ["The combined path (-o) was not specified."]) else return settings
 
 -- | Command line parsers which will convert the string list into its associated
 --   record form.
@@ -126,8 +166,6 @@ generatePaths nOfChannels hPattern = zipWith (\a b -> a ++ show b) (replicate nO
 customPathWrapper :: String -> Settings -> SettingMonad Settings
 customPathWrapper path settings = return $ settings { customPaths = customPaths settings ++ [path] }
 
--- | Specifier for the mode of operation for Recombinant
-data ModeOfOperation = Multiplex | Demultiplex | NotSpecified | ModeInvalid
 
 -- | Option parser for command line option --channels
 optionNumberOfChannels :: OptDescr (Settings -> SettingMonad Settings)
