@@ -29,8 +29,9 @@ import           Settings             (InputError (..), ModeOfOperation (..),
                                        parseInput, parserList)
 import           System.Environment   (getArgs, getProgName)
 import           System.Exit          (exitFailure, exitSuccess)
-import           System.IO            (Handle, IOMode (ReadMode, WriteMode),
-                                       hClose, hIsEOF, hSetBinaryMode)
+import           System.IO            (BufferMode (BlockBuffering), Handle,
+                                       IOMode (ReadMode, WriteMode), hClose,
+                                       hIsEOF, hSetBinaryMode, hSetBuffering)
 
 
 -- | Main functional entry point
@@ -56,7 +57,7 @@ main = do
 safeOpenRead :: String -> IO Handle
 safeOpenRead path = do
     h <- openFileBlocking path ReadMode -- Needed to open named pipes
-    hSetBinaryMode h True
+    setUpHandleOptions h
     return h
 
 
@@ -64,8 +65,15 @@ safeOpenRead path = do
 safeOpenWrite :: String -> IO Handle
 safeOpenWrite path = do
     h <- openFileBlocking path WriteMode -- Needed to open named pipes
-    hSetBinaryMode h True
+    setUpHandleOptions h
     return h
+
+
+-- | Sets up common handle options
+setUpHandleOptions :: Handle -> IO ()
+setUpHandleOptions h = do
+    hSetBinaryMode h True
+    hSetBuffering h (BlockBuffering (Just 65536))
 
 
 -- | The main execution branch
@@ -141,7 +149,7 @@ getBlock size handle = do
 
 -- | Generates a new list based on the supplied pattern
 interleaveHandles :: [Int] -> [a] -> [a]
-interleaveHandles hPattern handles = map (\pos -> handleVector V.! (pos - 1) ) hPattern
+interleaveHandles hPattern handles = map (\pos -> handleVector V.! pos ) hPattern
     where handleVector = V.fromList handles
 
 
