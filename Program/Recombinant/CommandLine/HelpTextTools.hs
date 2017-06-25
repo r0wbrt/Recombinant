@@ -16,7 +16,7 @@ limitations under the License.
 
 -}
 
-module Program.Recombinant.HelpTextTools
+module Program.Recombinant.CommandLine.HelpTextTools
     ( sUnderline
     , sSection
     , sOption

@@ -16,18 +16,18 @@ limitations under the License.
 
 -}
 
-module Program.Recombinant.HelpTexts
+module Program.Recombinant.CommandLine.HelpTexts
     ( extendedHelpMessage
-    , optionMode
-    , optionNumberOfChannels
-    , optionStream
-    , optionPathPattern
-    , optionBlockSize
-    , optionInterleavePattern
-    , optionHelp
+    , optionMsgMode
+    , optionMsgNumberOfChannels
+    , optionMsgStream
+    , optionMsgPathPattern
+    , optionMsgBlockSize
+    , optionMsgInterleavePattern
+    , optionMsgHelp
     ) where
 
-import           Program.Recombinant.HelpTextTools
+import           Program.Recombinant.CommandLine.HelpTextTools
 
 extendedHelpMessage :: String -> [String]
 extendedHelpMessage progName = concat
@@ -48,21 +48,21 @@ extendedHelpMessage progName = concat
             , "The following options are mandatory"
             , sEmptyLine
             ]
-            ++ optionMode ++ optionNumberOfChannels ++ optionStream ++
+            ++ optionMsgMode ++ optionMsgNumberOfChannels ++ optionMsgStream ++
             [ sEmptyLine
             , "The following options may be conditionally omitted "
             , sEmptyLine
             ]
-            ++ optionPathPattern ++
+            ++ optionMsgPathPattern ++
             [ sEmptyLine
             , "The following settings may be omitted. The default value of each option is"
             , "described in its description."
             , sEmptyLine
-            ] ++ optionBlockSize ++ optionInterleavePattern ++
+            ] ++ optionMsgBlockSize ++ optionMsgInterleavePattern ++
             [ sEmptyLine
             , "The following options will provide detail about the program."
             , sEmptyLine
-            ] ++ optionHelp
+            ] ++ optionMsgHelp
         )
     , sSection "Author" ["Written by Robert Christian Taylor"]
     , sSection "Reporting Bugs" [sToSingleLine ["Report bugs to ", sUnderline "https://github.com/r0wbrt/Recombinant/issues"]]
@@ -83,8 +83,8 @@ extendedHelpMessage progName = concat
         ]
     ]
 
-optionMode :: [String]
-optionMode =
+optionMsgMode :: [String]
+optionMsgMode =
     sOption "-m, --mode" ""
         [ "Sets the combining mode. Can be set to either multiplex"
         , "or demultiplex. In multiplex mode, a set number"
@@ -96,23 +96,23 @@ optionMode =
         , sToSingleLine ["streams are deinterleaved in blocks of size ", sBold "-b", "."]
         ]
 
-optionNumberOfChannels :: [String]
-optionNumberOfChannels =
+optionMsgNumberOfChannels :: [String]
+optionMsgNumberOfChannels =
     sOption "-n --channels" "[NUMBER OF CHANNELS]"
         [ "Sets the number of channel to use. This must be"
         , "set to an integer value"
         , "greater than or equal to one."
         ]
 
-optionStream :: [String]
-optionStream =
+optionMsgStream :: [String]
+optionMsgStream =
     sOption "-o --stream" "[FILE]"
         [ sToSingleLine ["When ", sBold "-m", "=", sUnderline "multiplex", " this is the path the multiplexed output will be written to."]
         , sToSingleLine ["When ", sBold "-m", "=", sUnderline "demultiplex", " this is the path to the input which will be demultiplexed from."]
         ]
 
-optionPathPattern :: [String]
-optionPathPattern =
+optionMsgPathPattern :: [String]
+optionMsgPathPattern =
     sOption "-p --pattern" "[FILE]"
         [ "Sets the expected path to multiplex or demultiplex to. This path will be copied"
         , sToSingleLine [sBold "-n", " times. For each stream, the path will have a number"]
@@ -126,8 +126,8 @@ optionPathPattern =
         , "specifying them after the program arguments."
         ]
 
-optionBlockSize :: [String]
-optionBlockSize =
+optionMsgBlockSize :: [String]
+optionMsgBlockSize =
     sOption "-b --blockSize" "[SIZE IN BYTES]"
         [ sToSingleLine ["Sets the size of the block to read from each stream. Defaults to 512 bytes."]
         , sEmptyLine
@@ -140,8 +140,8 @@ optionBlockSize =
         , sToSingleLine ["the output streams."]
         ]
 
-optionInterleavePattern :: [String]
-optionInterleavePattern =
+optionMsgInterleavePattern :: [String]
+optionMsgInterleavePattern =
     sOption "-i --interleavePattern" "[PATTERN]"
         [ "Sets the pattern for interleaving the streams."
         , "The format of the pattern is a comma seperated list of numbers"
@@ -153,8 +153,8 @@ optionInterleavePattern =
         , sUnderline "1,3,5,2,4."
         ]
 
-optionHelp :: [String]
-optionHelp =
+optionMsgHelp :: [String]
+optionMsgHelp =
     sOption "-h --help" ""
         [ sToSingleLine ["Provides a help message about this program. Passing in ", sBold "-h"]
         , "will produce a concise list of options."

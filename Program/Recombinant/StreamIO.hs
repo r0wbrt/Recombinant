@@ -22,4 +22,4 @@ module Program.Recombinant.StreamIO (Resource (..) ) where
 import           System.IO (Handle)
 
 
-data Resource = Pipe Handle | SharedMemorySegment | File Handle
+data Resource = Pipe Handle | SharedMemorySegment | File Handle | NullHandle

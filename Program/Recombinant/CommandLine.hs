@@ -21,10 +21,13 @@ module Program.Recombinant.CommandLine
     ( module Program.Recombinant.CommandLine.Config
     , module Program.Recombinant.CommandLine.Options
     , module Program.Recombinant.CommandLine.OptionValidators
+    , module Program.Recombinant.CommandLine.HelpTextTools
+    , module Program.Recombinant.CommandLine.HelpTexts
     , optionValidators
     , optionList
     , parseInput
     , shortHelpMessage
+    , fromCommandLineConfig
     ) where
 
 import           Control.Monad.Except                             (throwError)
@@ -32,7 +35,10 @@ import           Control.Monad.Except                             (runExceptT)
 import           Control.Monad.Identity
 import           Program.Recombinant.CommandLine.Config
 import           Program.Recombinant.CommandLine.Options
+import           Program.Recombinant.CommandLine.HelpTextTools
+import           Program.Recombinant.CommandLine.HelpTexts
 import           Program.Recombinant.CommandLine.OptionValidators
+import   qualified        Program.Recombinant as RCob
 import           System.Console.GetOpt                            (ArgOrder (ReturnInOrder),
                                                                    OptDescr (..),
                                                                    getOpt,
@@ -71,3 +77,6 @@ convertInputIntoBuilders parsers input =
 
 shortHelpMessage :: String -> [OptDescr a] -> String
 shortHelpMessage progName = usageInfo ("Usage: "++progName++" [OPTIONS...]")
+
+fromCommandLineConfig :: CommandLineConfig -> IO RCob.Config
+fromCommandLineConfig _ = return RCob.Config { RCob.mode = RCob.Multiplex, RCob.handlers = [], RCob.blockSize = 512, RCob.interleavePattern = [], RCob.aggregatedHandle = RCob.NullHandle}
