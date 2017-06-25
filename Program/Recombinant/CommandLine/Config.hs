@@ -16,8 +16,8 @@ limitations under the License.
 
 -}
 
-module Program.Recombinant.CommandLine.Config 
-    ( CommandLineConfig (..) 
+module Program.Recombinant.CommandLine.Config
+    ( CommandLineConfig (..)
     , CommandLineMonad
     , SpecifiedModeOfOperation (..)
     , InputError (..)

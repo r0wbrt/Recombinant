@@ -16,7 +16,7 @@ limitations under the License.
 
 -}
 
-module Program.Recombinant.HelpTexts 
+module Program.Recombinant.HelpTexts
     ( extendedHelpMessage
     , optionMode
     , optionNumberOfChannels
@@ -27,7 +27,7 @@ module Program.Recombinant.HelpTexts
     , optionHelp
     ) where
 
-import Program.Recombinant.HelpTextTools
+import           Program.Recombinant.HelpTextTools
 
 extendedHelpMessage :: String -> [String]
 extendedHelpMessage progName = concat
@@ -163,4 +163,4 @@ optionHelp =
         ]
 
 
- 
+

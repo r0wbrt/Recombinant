@@ -19,7 +19,7 @@ limitations under the License.
 module Program.Recombinant.StreamIO (Resource (..) ) where
 
 
-import System.IO (Handle)
+import           System.IO (Handle)
 
 
-data Resource = Pipe Handle | SharedMemorySegment | File Handle 
+data Resource = Pipe Handle | SharedMemorySegment | File Handle

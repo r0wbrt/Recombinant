@@ -22,11 +22,11 @@ module Program.Recombinant.Config
     , ModeOfOperation (..)
     ) where
 
-import Program.Recombinant.StreamIO (Resource)
+import           Program.Recombinant.StreamIO (Resource)
 
 
 -- | Specifier for the mode of operation for Recombinant
-data ModeOfOperation = Multiplex | Demultiplex 
+data ModeOfOperation = Multiplex | Demultiplex
 
 
 -- | Config settings for the Recombinant program

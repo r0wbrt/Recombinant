@@ -17,7 +17,7 @@ limitations under the License.
 -}
 
 
-module Program.Recombinant.CommandLine.OptionValidators 
+module Program.Recombinant.CommandLine.OptionValidators
     ( validatorBlockSize
     , validatorCombinedPath
     , validatorInterleavePattern
@@ -26,15 +26,13 @@ module Program.Recombinant.CommandLine.OptionValidators
     , validatorPaths
     ) where
 
-import           Control.Monad.Except   (throwError, when)
-import Program.Recombinant.CommandLine.Config 
-    ( CommandLineMonad
-    , SpecifiedModeOfOperation (..)
-    , CommandLineConfig (..)
-    , InputError (..)
-    , getPathList
-    , getInterleavePattern
-    )
+import           Control.Monad.Except                   (throwError, when)
+import           Program.Recombinant.CommandLine.Config (CommandLineConfig (..),
+                                                         CommandLineMonad,
+                                                         InputError (..),
+                                                         SpecifiedModeOfOperation (..),
+                                                         getInterleavePattern,
+                                                         getPathList)
 
 validatorNumberOfChannels :: CommandLineConfig -> CommandLineMonad CommandLineConfig
 validatorMode :: CommandLineConfig -> CommandLineMonad CommandLineConfig
@@ -72,4 +70,4 @@ validatorInterleavePattern settings = do
     return settings
 
 validatorCombinedPath settings = if null (combinedPath settings) then throwError (ErrorMessages ["The combined path (-o) was not specified."]) else return settings
- 
+

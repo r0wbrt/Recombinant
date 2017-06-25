@@ -17,7 +17,7 @@ limitations under the License.
 -}
 
 
-module Program.Recombinant.CommandLine 
+module Program.Recombinant.CommandLine
     ( module Program.Recombinant.CommandLine.Config
     , module Program.Recombinant.CommandLine.Options
     , module Program.Recombinant.CommandLine.OptionValidators
@@ -27,13 +27,16 @@ module Program.Recombinant.CommandLine
     , shortHelpMessage
     ) where
 
-import Program.Recombinant.CommandLine.Config
-import Program.Recombinant.CommandLine.Options
-import Program.Recombinant.CommandLine.OptionValidators
-import           Control.Monad.Except   (throwError)
-import           System.Console.GetOpt (OptDescr (..), usageInfo, getOpt, ArgOrder (ReturnInOrder))
+import           Control.Monad.Except                             (throwError)
+import           Control.Monad.Except                             (runExceptT)
 import           Control.Monad.Identity
-import           Control.Monad.Except   (runExceptT)
+import           Program.Recombinant.CommandLine.Config
+import           Program.Recombinant.CommandLine.Options
+import           Program.Recombinant.CommandLine.OptionValidators
+import           System.Console.GetOpt                            (ArgOrder (ReturnInOrder),
+                                                                   OptDescr (..),
+                                                                   getOpt,
+                                                                   usageInfo)
 
 -- | List of functions to run after the record is intially built from the
 --   supplied user input.

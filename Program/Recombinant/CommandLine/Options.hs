@@ -16,7 +16,7 @@ limitations under the License.
 
 -}
 
-module Program.Recombinant.CommandLine.Options 
+module Program.Recombinant.CommandLine.Options
     ( optionNumberOfChannels
     , optionBlockSize
     , optionPathPattern
@@ -28,14 +28,19 @@ module Program.Recombinant.CommandLine.Options
     , customPathWrapper
     ) where
 
-import Program.Recombinant.CommandLine.Config (CommandLineMonad, CommandLineConfig (..), InputError (..), SpecifiedModeOfOperation (..))
+import           Program.Recombinant.CommandLine.Config (CommandLineConfig (..),
+                                                         CommandLineMonad,
+                                                         InputError (..),
+                                                         SpecifiedModeOfOperation (..))
 
-import           Control.Monad.Except   (throwError)
-import           Text.Parsec            (parse)
-import           Text.Parsec.Language   (emptyDef)
-import           Text.Parsec.Token      (commaSep, integer, makeTokenParser)
-import           Data.Char              (toUpper)
-import           System.Console.GetOpt  (ArgDescr (NoArg, ReqArg), OptDescr (..) )
+import           Control.Monad.Except                   (throwError)
+import           Data.Char                              (toUpper)
+import           System.Console.GetOpt                  (ArgDescr (NoArg, ReqArg),
+                                                         OptDescr (..))
+import           Text.Parsec                            (parse)
+import           Text.Parsec.Language                   (emptyDef)
+import           Text.Parsec.Token                      (commaSep, integer,
+                                                         makeTokenParser)
 
 
 -- | Wraps non options into a builder, used to later build a record

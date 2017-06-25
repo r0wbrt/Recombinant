@@ -49,4 +49,4 @@ sToSingleLine :: [String] -> String
 sToSingleLine = concat
 
 sEmptyLine :: String
-sEmptyLine = "" 
+sEmptyLine = ""
