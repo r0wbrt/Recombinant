@@ -16,11 +16,18 @@ limitations under the License.
 
 -}
 
-module Messages (extendedHelpMessage, shortHelpMessage) where
-import           System.Console.GetOpt (OptDescr (..), usageInfo)
+module Program.Recombinant.HelpTexts 
+    ( extendedHelpMessage
+    , optionMode
+    , optionNumberOfChannels
+    , optionStream
+    , optionPathPattern
+    , optionBlockSize
+    , optionInterleavePattern
+    , optionHelp
+    ) where
 
-shortHelpMessage :: String -> [OptDescr a] -> String
-shortHelpMessage progName = usageInfo ("Usage: "++progName++" [OPTIONS...]")
+import Program.Recombinant.HelpTextTools
 
 extendedHelpMessage :: String -> [String]
 extendedHelpMessage progName = concat
@@ -155,26 +162,5 @@ optionHelp =
         , sToSingleLine ["Passing in ", sBold "--help", " will produce this message"]
         ]
 
-sUnderline :: String -> String
-sUnderline text = "\ESC[4m" ++ text ++ "\ESC[0m"
 
-sSection :: String -> [String] -> [String]
-sSection title body =[sBold title] ++ map sIndent body ++ [sEmptyLine]
-
-sOption :: String -> String -> [String] -> [String]
-sOption name arg description = header ++ body ++ footer
-    where header = [ sToSingleLine [sBold name] ++ (if arg /= "" then "=" ++ sUnderline arg else "")]
-          body = map sIndent description
-          footer = [sEmptyLine]
-
-sBold :: String -> String
-sBold text = "\ESC[1m" ++ text ++ "\ESC[0m"
-
-sIndent :: String -> String
-sIndent text = "\t" ++ text
-
-sToSingleLine :: [String] -> String
-sToSingleLine = concat
-
-sEmptyLine :: String
-sEmptyLine = ""
+ 
