@@ -81,8 +81,8 @@ optionMode =
     sOption "-m, --mode" ""
         [ "Sets the combining mode. Can be set to either multiplex"
         , "or demultiplex. In multiplex mode, a set number"
-        , sToSingleLine ["of channels set by option ", sBold "-n", "."]
-        , sToSingleLine ["The streams are interleaved in blocks of size ", sBold "-b", "."]
+        , sToSingleLine ["of channels set by option ", sBold "-n"]
+        , sToSingleLine ["are interleaved in blocks of size ", sBold "-b", "."]
         , sEmptyLine
         , "In demultiplex mode, the opposite occurs. The stream"
         , sToSingleLine ["is broken down into", sBold " -n", " streams. The"]
@@ -122,7 +122,7 @@ optionPathPattern =
 optionBlockSize :: [String]
 optionBlockSize =
     sOption "-b --blockSize" "[SIZE IN BYTES]"
-        [ sToSingleLine ["Sets the size of the block to read from each stream."]
+        [ sToSingleLine ["Sets the size of the block to read from each stream. Defaults to 512 bytes."]
         , sEmptyLine
         , sToSingleLine ["In ", sBold "-m", "=", sUnderline "multiplex", ", the program will read"]
         , sToSingleLine ["in blocks of size ", sBold "-b", " from each stream and combine them"]

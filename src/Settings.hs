@@ -16,8 +16,6 @@ limitations under the License.
 
 -}
 
---TODO - Validators
-
 module Settings
     ( Settings (..)
     , InputError (..)
