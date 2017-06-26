@@ -16,16 +16,16 @@ limitations under the License.
 
 -}
 
-module Program.Recombinant 
+module Program.Recombinant
     ( runRecombinant
     , module Program.Recombinant.Config
     , module Program.Recombinant.StreamIO
     ) where
 
-import Program.Recombinant.Config
-import Program.Recombinant.StreamIO
-import qualified Data.Vector as V
-
+import           Control.Monad                (when)
+import qualified Data.Vector                  as V
+import           Program.Recombinant.Config
+import           Program.Recombinant.StreamIO
 
 runRecombinant :: Config -> IO ()
 runRecombinant config = do
@@ -46,5 +46,5 @@ interleaveHandles hPattern hList = map (\pos -> handleVector V.! pos ) hPattern
 whileListM_ :: (a -> IO Bool) -> [a] -> IO ()
 whileListM_ action (x:xs) = do
     res <- action x
-    if res then whileListM_ action xs else return ()
+    when res $ whileListM_ action xs
 whileListM_ _ [] = return ()

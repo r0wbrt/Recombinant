@@ -32,7 +32,7 @@ data ModeOfOperation = Multiplex | Demultiplex
 -- | Config settings for the Recombinant program
 data Config = Config
  { mode              :: ModeOfOperation
- , handles          :: [Resource]
+ , handles           :: [Resource]
  , blockSize         :: Int
  , interleavePattern :: [Int]
  , aggregatedHandle  :: Resource

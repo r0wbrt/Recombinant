@@ -18,58 +18,62 @@ limitations under the License.
 
 module Main (module Main) where
 
-import System.Exit (exitFailure, exitSuccess)
-import System.Environment (getArgs, getProgName)
-import           Data.Text            (pack, strip, unpack)
-import Program.Recombinant 
-import Program.Recombinant.CommandLine (InputError (..), optionList, optionValidators, parseInput, shortHelpMessage, fromCommandLineConfig, extendedHelpMessage)
+import           Data.Text                       (pack, strip, unpack)
+import           Program.Recombinant
+import           Program.Recombinant.CommandLine (InputError (..),
+                                                  extendedHelpMessage,
+                                                  fromCommandLineConfig,
+                                                  optionList, optionValidators,
+                                                  parseInput, shortHelpMessage)
+import           System.Environment              (getArgs, getProgName)
+import           System.Exit                     (exitFailure, exitSuccess)
 
 -- | Recombinant main program entry point
 main :: IO ()
 main = do
-    
+
     -- Pull in options from the command line
     commandLineInput <- getArgs
-    
-    -- Parse them into the command line config and then validate them for 
+
+    -- Parse them into the command line config and then validate them for
     -- correctness.
     let commandLineParseResult = parseInput optionList optionValidators commandLineInput
-    
-    
+
+
     case commandLineParseResult of
-            
-        -- This branch is entered when the user supplies an invalid option 
+
+        -- This branch is entered when the user supplies an invalid option
         -- via the command line.
         Left (InvalidOptions msg) -> writeErrorMessage msg >> exitFailure
-        
+
         -- This branch is entered when the value to an option is invalid.
         Left (ErrorMessages msg)  -> writeErrorMessage msg >> exitFailure
-        
+
         -- This branch fires when the user wants the extended help message.
         -- The option that triggers this on the command line is --help.
         Left ShowAbout             -> do
-                
+
             progName <- getProgName
             putStr (unlines $ extendedHelpMessage progName) >> exitSuccess
-            
-        -- This branch fires for the short help message. This message 
+
+        -- This branch fires for the short help message. This message
         -- does not include an extended description of the program.
         -- Only a conside list of options and how to use them.
         Left ShowHelp           -> do
-            
+
             progName <- getProgName
             putStr (shortHelpMessage progName optionList) >> exitSuccess
-        
+
         -- Runs main recombinant program
         Right commandLineConfig -> do
-            
+
             config <- fromCommandLineConfig commandLineConfig
-            
+
             runRecombinant config
-            
+
             mapM_ closeResource (handles config)
             closeResource (aggregatedHandle config)
-            
+
             exitSuccess
 
 

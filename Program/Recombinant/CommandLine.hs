@@ -30,20 +30,20 @@ module Program.Recombinant.CommandLine
     , fromCommandLineConfig
     ) where
 
-import           Control.Monad.Except                             (throwError)
-import           Control.Monad.Except                             (runExceptT)
+import           Control.Monad.Except                             (runExceptT,
+                                                                   throwError)
 import           Control.Monad.Identity
+import qualified Program.Recombinant                              as RCob
 import           Program.Recombinant.CommandLine.Config
-import           Program.Recombinant.CommandLine.Options
-import           Program.Recombinant.CommandLine.HelpTextTools
 import           Program.Recombinant.CommandLine.HelpTexts
+import           Program.Recombinant.CommandLine.HelpTextTools
+import           Program.Recombinant.CommandLine.Options
 import           Program.Recombinant.CommandLine.OptionValidators
-import   qualified        Program.Recombinant as RCob
 import           System.Console.GetOpt                            (ArgOrder (ReturnInOrder),
                                                                    OptDescr (..),
                                                                    getOpt,
                                                                    usageInfo)
-import System.IO (IOMode (ReadMode, WriteMode))
+import           System.IO                                        (IOMode (ReadMode, WriteMode))
 
 
 -- | List of functions to run after the record is intially built from the
@@ -86,9 +86,9 @@ fromCommandLineConfig config = do
     handles <- getHandles config
     let ioMode = if mode config == Multiplex then WriteMode else ReadMode
     aggHandle <- RCob.openResource (combinedPath config) RCob.TypePath ioMode
-    return $ RCob.Config 
+    return RCob.Config
                 { RCob.mode = getMode config
-                , RCob.handles = handles 
+                , RCob.handles = handles
                 , RCob.blockSize = blockSize config
                 , RCob.interleavePattern = getInterleavePattern config
                 , RCob.aggregatedHandle = aggHandle

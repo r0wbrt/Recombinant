@@ -19,13 +19,14 @@ limitations under the License.
 module Program.Recombinant.StreamIO (Resource (..), ResourceType (..), openResource, copyToStream, closeResource ) where
 
 
-import           System.IO (Handle, hIsEOF, hSetBinaryMode, IOMode, hSeek, SeekMode (RelativeSeek), hClose)
-import System.Posix.IO (fdToHandle, handleToFd, dup, closeFd)
-import System.Posix.Types (Fd (..))
-import System.Posix.Files (isNamedPipe, getFileStatus)
-import           GHC.IO.Handle.FD     (openFileBlocking, openBinaryFile)
 import qualified Data.ByteString.Lazy as BS
-import Foreign.C.Types
+import           Foreign.C.Types
+import           GHC.IO.Handle.FD     (openBinaryFile, openFileBlocking)
+import           System.IO            (Handle, IOMode, SeekMode (RelativeSeek),
+                                       hClose, hIsEOF, hSeek, hSetBinaryMode)
+import           System.Posix.Files   (getFileStatus, isNamedPipe)
+import           System.Posix.IO      (closeFd, dup, fdToHandle, handleToFd)
+import           System.Posix.Types   (Fd (..))
 
 
 data ResourceType = TypePath | TypeSharedMemorySegment
@@ -39,23 +40,20 @@ foreign import ccall "spliceHandler" c_spliceHandler ::
     ->  Fd
     ->  Bool
     ->  Int
-    ->  IO (Int)
+    ->  IO Int
 
 foreign import ccall "copyRange" c_copyRange ::
         Fd
     ->  Fd
     ->  Int
-    ->  IO (Int)
+    ->  IO Int
 
 -- |Open a resource given the supplied path.
 openResource :: String -> ResourceType -> IOMode -> IO Resource
 openResource path TypePath mode = do
     pipeCheck <- isPipe path
-    if  pipeCheck then 
-        do
-            openPipe path mode
-                   else do
-                       openFile path mode
+    if  pipeCheck then openPipe path mode
+                   else openFile path mode
 
 openResource _ TypeSharedMemorySegment _ = error "Shared Memory resource passing is not implemented (yet)."
 
@@ -72,36 +70,36 @@ closeResource (Pipe fd h) = do
 closeResource NullHandle = return ()
 closeResource SharedMemorySegment = return ()
 
--- |Copies data from one resource to another idealling using fast kernel 
---  primitives when availiable. 
+-- |Copies data from one resource to another idealling using fast kernel
+--  primitives when availiable.
 copyToStream :: Resource -> Resource -> Int -> IO Bool
 copyToStream (Pipe sourceFd _) (Pipe destFd _) bytes = do
     result <- c_spliceHandler sourceFd True destFd True bytes
     return $ result == 1
-    
+
 copyToStream (Pipe sourceFd sourceH) (File destFd destH) bytes = do
         result <- c_spliceHandler sourceFd True destFd False bytes
         handleCReturn result sourceH destH bytes
-    
+
 copyToStream (File sourceFd sourceH) (Pipe destFd destH) bytes = do
         result <- c_spliceHandler sourceFd False destFd True bytes
         handleCReturn result sourceH destH bytes
-        
+
 copyToStream (File sourceFd sourceH) (File destFd destH) bytes = do
         result <- c_copyRange sourceFd destFd bytes
         handleCReturn result sourceH destH bytes
 
-copyToStream NullHandle _ _ = return $ False -- Null sources return EOF.
+copyToStream NullHandle _ _ = return False -- Null sources return EOF.
 
 copyToStream (Pipe _ sourceH) NullHandle bytes = do
     eof <- hIsEOF sourceH
     if eof then return False else do
-        block <- BS.hGet sourceH bytes 
+        block <- BS.hGet sourceH bytes
         return $ fromIntegral (BS.length block) == bytes
 
 copyToStream (File _ h) NullHandle bytes = do
     eof <- hIsEOF h
-    if eof then return False else do 
+    if eof then return False else do
         hSeek h RelativeSeek (fromIntegral bytes)
         return True
 
@@ -112,13 +110,13 @@ copyToStream _ _ _ = error "Shared Memory resource passing is not implemented (y
 --  reached or some other unrecoverable error.
 --  0 means the copy could not be done using the kernel primitive so do the
 --  copy in user space.
---  1 means the copy was a success. 
+--  1 means the copy was a success.
 handleCReturn :: Int -> Handle -> Handle -> Int -> IO Bool
-handleCReturn ret sourceH destH bytes = do
+handleCReturn ret sourceH destH bytes =
     case ret of
          0 -> inProcessCopy sourceH destH bytes
-         1 -> return $ True
-         _ -> return $ False
+         1 -> return True
+         _ -> return False
 
 
 -- | Returns true if and only if the passed in path is a named pipe.
@@ -133,9 +131,7 @@ openPipe :: String -> IOMode -> IO Resource
 openPipe path mode = do
     h <- openFileBlocking path mode
     hSetBinaryMode h True
-    fd <- handleToFd h
-    fd2 <- dup fd
-    newH <- fdToHandle fd2
+    (newH, fd) <- setUpHandle h
     return $ Pipe fd newH
 
 
@@ -143,19 +139,24 @@ openPipe path mode = do
 openFile :: String -> IOMode -> IO Resource
 openFile path mode = do
     h <- openBinaryFile path mode
+    (newH, fd) <- setUpHandle h
+    return $ File fd newH
+
+-- | Sets up a handle and FD
+setUpHandle :: Handle -> IO (Handle, Fd)
+setUpHandle h = do
     fd <- handleToFd h
     fd2 <- dup fd
     newH <- fdToHandle fd2
-    return $ File fd newH
-
+    return (newH, fd)
 
 -- |Copies one file to another file in process memory.
 inProcessCopy :: Handle -> Handle -> Int -> IO Bool
 inProcessCopy sourceH destH bytes = do
     eof <- hIsEOF sourceH
-    if eof then return False 
+    if eof then return False
            else do
-               block <- BS.hGet sourceH bytes 
+               block <- BS.hGet sourceH bytes
                BS.hPut destH block
                return $ fromIntegral (BS.length block) == bytes
 

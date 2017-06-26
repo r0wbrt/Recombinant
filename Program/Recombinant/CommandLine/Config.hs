@@ -30,11 +30,13 @@ module Program.Recombinant.CommandLine.Config
     , getMode
     ) where
 
-import           Control.Monad.Except   (ExceptT)
+import           Control.Monad.Except         (ExceptT)
 import           Control.Monad.Identity
-import Program.Recombinant.StreamIO (openResource, Resource, ResourceType (TypePath) )
-import System.IO (IOMode (ReadMode, WriteMode))
-import qualified Program.Recombinant.Config as RecConfig
+import qualified Program.Recombinant.Config   as RecConfig
+import           Program.Recombinant.StreamIO (Resource,
+                                               ResourceType (TypePath),
+                                               openResource)
+import           System.IO                    (IOMode (ReadMode, WriteMode))
 
 -- | Command Line monad in which the parsing of the command line options takes place.
 --   Provides error handling mechanism.
@@ -101,6 +103,6 @@ getHandles config = do
 -- | Converts the command line mode into the Recombinant program mode.
 getMode :: CommandLineConfig -> RecConfig.ModeOfOperation
 getMode config = case mode config of
-                      Multiplex -> RecConfig.Multiplex
+                      Multiplex   -> RecConfig.Multiplex
                       Demultiplex -> RecConfig.Demultiplex
-                      _ -> error "Invalid mode"
+                      _           -> error "Invalid mode"
