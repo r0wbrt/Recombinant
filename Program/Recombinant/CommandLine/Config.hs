@@ -26,17 +26,22 @@ module Program.Recombinant.CommandLine.Config
     , getPathList
     , getInterleavePattern
     , generatePaths
+    , getHandles
+    , getMode
     ) where
 
 import           Control.Monad.Except   (ExceptT)
 import           Control.Monad.Identity
+import Program.Recombinant.StreamIO (openResource, Resource, ResourceType (TypePath) )
+import System.IO (IOMode (ReadMode, WriteMode))
+import qualified Program.Recombinant.Config as RecConfig
 
 -- | Command Line monad in which the parsing of the command line options takes place.
 --   Provides error handling mechanism.
 type CommandLineMonad = ExceptT InputError Identity
 
 -- | Specifier for the mode of operation for Recombinant
-data SpecifiedModeOfOperation = Multiplex | Demultiplex | NotSpecified | ModeInvalid
+data SpecifiedModeOfOperation = Multiplex | Demultiplex | NotSpecified | ModeInvalid deriving Eq
 
 
 -- | The setting record to store parsed options in
@@ -84,3 +89,18 @@ getInterleavePattern settings = if null (interleavePattern settings) then [0 .. 
 --   pattern
 generatePaths :: Int -> String -> [String]
 generatePaths nOfChannels hPattern = zipWith (\a b -> a ++ show b) (replicate nOfChannels hPattern) [1 .. nOfChannels]
+
+
+-- | Creates a list of handles from the list of paths.
+getHandles :: CommandLineConfig -> IO [Resource]
+getHandles config = do
+    let paths = getPathList config
+    let ioMode = if mode config == Multiplex then ReadMode else WriteMode
+    mapM (\p -> openResource p TypePath ioMode) paths
+
+-- | Converts the command line mode into the Recombinant program mode.
+getMode :: CommandLineConfig -> RecConfig.ModeOfOperation
+getMode config = case mode config of
+                      Multiplex -> RecConfig.Multiplex
+                      Demultiplex -> RecConfig.Demultiplex
+                      _ -> error "Invalid mode"

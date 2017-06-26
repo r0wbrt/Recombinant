@@ -24,6 +24,27 @@ module Program.Recombinant
 
 import Program.Recombinant.Config
 import Program.Recombinant.StreamIO
+import qualified Data.Vector as V
+
 
 runRecombinant :: Config -> IO ()
-runRecombinant _ = return ()
+runRecombinant config = do
+    let handleList = interleaveHandles (interleavePattern config) (handles config)
+    let aggHandle = aggregatedHandle config
+    let bytes = blockSize config
+    case mode config of
+         Multiplex -> whileListM_ (\s -> copyToStream s aggHandle bytes) (cycle handleList)
+         Demultiplex -> whileListM_ (\d -> copyToStream aggHandle d bytes) (cycle handleList)
+
+
+-- | Generates a new list based on the supplied pattern
+interleaveHandles :: [Int] -> [a] -> [a]
+interleaveHandles hPattern hList = map (\pos -> handleVector V.! pos ) hPattern
+    where handleVector = V.fromList hList
+
+-- | Loops over a list until the handler returns false.
+whileListM_ :: (a -> IO Bool) -> [a] -> IO ()
+whileListM_ action (x:xs) = do
+    res <- action x
+    if res then whileListM_ action xs else return ()
+whileListM_ _ [] = return ()

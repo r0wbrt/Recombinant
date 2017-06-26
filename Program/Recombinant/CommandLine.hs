@@ -43,6 +43,8 @@ import           System.Console.GetOpt                            (ArgOrder (Ret
                                                                    OptDescr (..),
                                                                    getOpt,
                                                                    usageInfo)
+import System.IO (IOMode (ReadMode, WriteMode))
+
 
 -- | List of functions to run after the record is intially built from the
 --   supplied user input.
@@ -78,5 +80,16 @@ convertInputIntoBuilders parsers input =
 shortHelpMessage :: String -> [OptDescr a] -> String
 shortHelpMessage progName = usageInfo ("Usage: "++progName++" [OPTIONS...]")
 
+
 fromCommandLineConfig :: CommandLineConfig -> IO RCob.Config
-fromCommandLineConfig _ = return RCob.Config { RCob.mode = RCob.Multiplex, RCob.handlers = [], RCob.blockSize = 512, RCob.interleavePattern = [], RCob.aggregatedHandle = RCob.NullHandle}
+fromCommandLineConfig config = do
+    handles <- getHandles config
+    let ioMode = if mode config == Multiplex then WriteMode else ReadMode
+    aggHandle <- RCob.openResource (combinedPath config) RCob.TypePath ioMode
+    return $ RCob.Config 
+                { RCob.mode = getMode config
+                , RCob.handles = handles 
+                , RCob.blockSize = blockSize config
+                , RCob.interleavePattern = getInterleavePattern config
+                , RCob.aggregatedHandle = aggHandle
+                }
