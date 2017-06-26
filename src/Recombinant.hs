@@ -67,6 +67,9 @@ main = do
             
             runRecombinant config
             
+            mapM_ closeResource (handles config)
+            closeResource (aggregatedHandle config)
+            
             exitSuccess
 
 

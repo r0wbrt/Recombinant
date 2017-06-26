@@ -16,11 +16,11 @@ limitations under the License.
 
 -}
 
-module Program.Recombinant.StreamIO (Resource (..), ResourceType (..), openResource, copyToStream ) where
+module Program.Recombinant.StreamIO (Resource (..), ResourceType (..), openResource, copyToStream, closeResource ) where
 
 
-import           System.IO (Handle, hIsEOF, hSetBinaryMode, IOMode, hSeek, SeekMode (RelativeSeek))
-import System.Posix.IO (fdToHandle, handleToFd, dup)
+import           System.IO (Handle, hIsEOF, hSetBinaryMode, IOMode, hSeek, SeekMode (RelativeSeek), hClose)
+import System.Posix.IO (fdToHandle, handleToFd, dup, closeFd)
 import System.Posix.Types (Fd (..))
 import System.Posix.Files (isNamedPipe, getFileStatus)
 import           GHC.IO.Handle.FD     (openFileBlocking, openBinaryFile)
@@ -59,6 +59,18 @@ openResource path TypePath mode = do
 
 openResource _ TypeSharedMemorySegment _ = error "Shared Memory resource passing is not implemented (yet)."
 
+-- | Closes a resource
+closeResource :: Resource -> IO ()
+closeResource (File fd h) = do
+    hClose h
+    closeFd fd
+
+closeResource (Pipe fd h) = do
+    hClose h
+    closeFd fd
+
+closeResource NullHandle = return ()
+closeResource SharedMemorySegment = return ()
 
 -- |Copies data from one resource to another idealling using fast kernel 
 --  primitives when availiable. 
