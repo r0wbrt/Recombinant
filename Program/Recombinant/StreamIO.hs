@@ -22,6 +22,7 @@ module Program.Recombinant.StreamIO (Resource (..), ResourceType (..), openResou
 import qualified Data.ByteString.Lazy as BS
 import           Foreign.C.Types
 import           GHC.IO.Handle.FD     (openBinaryFile, openFileBlocking)
+import           System.Directory     (doesFileExist)
 import           System.IO            (Handle, IOMode, SeekMode (RelativeSeek),
                                        hClose, hIsEOF, hSeek, hSetBinaryMode)
 import           System.Posix.Files   (getFileStatus, isNamedPipe)
@@ -122,8 +123,12 @@ handleCReturn ret sourceH destH bytes =
 -- | Returns true if and only if the passed in path is a named pipe.
 isPipe :: String -> IO Bool
 isPipe path = do
-    fileInfo <- getFileStatus path
-    return $ isNamedPipe fileInfo
+    fileExists <- doesFileExist path
+
+    if fileExists then do
+        fileInfo <- getFileStatus path
+        return $ isNamedPipe fileInfo
+                  else return False
 
 
 -- |Opens a named pipe and returns the Posix Fd describing it.

@@ -18,13 +18,15 @@ limitations under the License.
 
 module Main (module Main) where
 
+import           Control.Monad                   (when)
 import           Data.Text                       (pack, strip, unpack)
 import           Program.Recombinant
 import           Program.Recombinant.CommandLine (InputError (..),
                                                   extendedHelpMessage,
                                                   fromCommandLineConfig,
                                                   optionList, optionValidators,
-                                                  parseInput, shortHelpMessage)
+                                                  parseInput, shortHelpMessage,
+                                                  validatorSourcePaths)
 import           System.Environment              (getArgs, getProgName)
 import           System.Exit                     (exitFailure, exitSuccess)
 
@@ -66,6 +68,10 @@ main = do
 
         -- Runs main recombinant program
         Right commandLineConfig -> do
+
+            sourcePathResult <- validatorSourcePaths commandLineConfig
+
+            when (sourcePathResult /= []) (writeErrorMessage sourcePathResult >> exitFailure)
 
             config <- fromCommandLineConfig commandLineConfig
 

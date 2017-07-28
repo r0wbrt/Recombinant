@@ -97,30 +97,45 @@ int spliceHandler(int fd_in, int fdInPipe, int fd_out, int fdOutPipe, int size)
 
 int copyRange(int fd_in, int fd_out, int length) 
 {
-    loff_t off_in, off_out, len, ret;
+    loff_t off_in, off_out, len, ret, inTotalLen;
+    
+    int retValue = 1;
     
     off_in = lseek(fd_in, 0, SEEK_CUR);
     off_out = lseek(fd_out, 0, SEEK_CUR);
+    inTotalLen = lseek(fd_in, 0, SEEK_END);
+    
+    //Don't do half copies of the data. Only copy 
+    //if the source has enough data to accomodate the request.
+    //If calling code wants different behavior, it can truncate 
+    //length its self.
+    if(off_in + length > inTotalLen) {
+        return -1;
+    }
+    
     len = length;
+    
     
     do {
         ret = copy_file_range(fd_in, &off_in, fd_out, &off_out, len, 0);
         if(ret == -1) {
             if(errno == EXDEV) {
-                return 0;
+                retValue = 0;
             } else {
-                return -1;
+                retValue = -1;
             }
-        } else if (ret == 0) {
-            return -1;
+            
+            goto end;
         }
         
         len -= ret;
         
     } while (len > 0);
-    
+
+
+end:
     lseek(fd_in, off_in, SEEK_SET);
     lseek(fd_out, off_out, SEEK_SET);
     
-    return 1;
+    return retValue;
 }

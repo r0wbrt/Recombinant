@@ -24,15 +24,19 @@ module Program.Recombinant.CommandLine.OptionValidators
     , validatorMode
     , validatorNumberOfChannels
     , validatorPaths
+    , validatorSourcePaths
     ) where
 
 import           Control.Monad.Except                   (throwError, when)
+import           Data.Maybe                             (catMaybes, fromJust,
+                                                         isJust)
 import           Program.Recombinant.CommandLine.Config (CommandLineConfig (..),
                                                          CommandLineMonad,
                                                          InputError (..),
                                                          SpecifiedModeOfOperation (..),
                                                          getInterleavePattern,
                                                          getPathList)
+import           System.Directory                       (doesFileExist)
 
 validatorNumberOfChannels :: CommandLineConfig -> CommandLineMonad CommandLineConfig
 validatorMode :: CommandLineConfig -> CommandLineMonad CommandLineConfig
@@ -40,7 +44,7 @@ validatorPaths :: CommandLineConfig -> CommandLineMonad CommandLineConfig
 validatorBlockSize :: CommandLineConfig -> CommandLineMonad CommandLineConfig
 validatorInterleavePattern :: CommandLineConfig -> CommandLineMonad CommandLineConfig
 validatorCombinedPath :: CommandLineConfig -> CommandLineMonad CommandLineConfig
-
+validatorSourcePaths :: CommandLineConfig -> IO [String]
 
 validatorNumberOfChannels settings =
     if numberOfChannels settings < 1 then throwError (ErrorMessages
@@ -71,3 +75,21 @@ validatorInterleavePattern settings = do
 
 validatorCombinedPath settings = if null (combinedPath settings) then throwError (ErrorMessages ["The combined path (-o) was not specified."]) else return settings
 
+
+validatorSourcePaths settings = case mode settings of
+                                     Multiplex -> checkSourcePaths settings
+                                     Demultiplex -> do
+                                         pathError <- checkPath (combinedPath settings)
+                                         return [fromJust pathError ++ " either does not correspond to a file that exists, or is a directory."| isJust pathError]
+                                     _ -> return []
+
+checkSourcePaths :: CommandLineConfig -> IO [String]
+checkSourcePaths settings = do
+    errors <- mapM checkPath (getPathList settings)
+    let pathList = catMaybes errors
+    return $ map (++ " either does not correspond to a file that exists, or is a directory.") pathList
+
+checkPath :: String -> IO (Maybe String)
+checkPath path = do
+    fileExist <- doesFileExist path
+    return $ if fileExist then Nothing else Just path
